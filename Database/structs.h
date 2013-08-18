@@ -15,25 +15,28 @@
 #ifndef STRUCTS_H
 #define	STRUCTS_H
 
-struct Address {
-    int id;
-    int set;
-    //    char name[MAX_DATA];
-    //  char email[MAX_DATA];
-    char *name;
-    char *email;
-};
-
-struct Database {
-    //struct Address rows[MAX_ROWS];
-    struct Address *rows;
-    int max_rows; 
-    int max_data;
-};
-
 struct Connection {
     FILE *file;
     struct Database *db;
     char mode;
 };
+
+struct Database {   
+    //Pointer to an array of stuct Address pointers
+    struct Address **rows;
+    int max_rows; 
+    int max_data;
+   //struct Address rows[MAX_ROWS];
+};
+
+struct Address {
+    int id;
+    int set;
+    char *name;
+    char *email;    
+    //    char name[MAX_DATA];
+    //  char email[MAX_DATA];
+};
+
+
 #endif	/* STRUCTS_H */
