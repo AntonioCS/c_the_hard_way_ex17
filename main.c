@@ -32,12 +32,16 @@ int main(int argc, char *argv[]) {
      * 
      * Start connection
      */
+    DEBUG_MSG("Creating conn");
     conn = Database_open(filename, action);
-    
+    DEBUG_MSG("Created conn");
     int id = 0;
 
     if (argc > 3) {
         id = atoi(argv[3]);
+        //since arrays are zero based I have to decrement
+        id--;
+        
     } 
        
     // if(id >= MAX_ROWS) die("There's not that many records.");
@@ -63,7 +67,7 @@ int main(int argc, char *argv[]) {
         case 's':
             if (argc != 6) Database_exit("Need id, name, email to set",conn);
 
-            Database_set(conn, id, argv[4], argv[5]);
+            Database_set(conn, id, argv[4], argv[5]);            
             Database_write(conn);
             break;
 

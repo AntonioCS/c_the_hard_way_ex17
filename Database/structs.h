@@ -38,5 +38,12 @@ struct Address {
     //  char email[MAX_DATA];
 };
 
+#define DEBUG true
+
+#ifdef DEBUG
+#define DEBUG_MSG(msg) (printf("Debug: %s\n",msg))
+#else
+#define DEBUG_MSG(msg)
+#endif
 
 #endif	/* STRUCTS_H */

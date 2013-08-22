@@ -1,4 +1,5 @@
 
+
 #include "structs.h"
 #include "functions.h"
 
@@ -10,9 +11,7 @@ static char *safe_strncpy(char *, const char *, size_t);
 static struct Address *create_address(int,int,int);
 static struct Address *create_address_fill(int,int,int,char*,char*);
 static struct Address **create_address_array(int);
-static void Database_create_structure(struct Connection *,int,void *);
-
-
+static void Database_create_structure(struct Connection *,void *);
 
 static struct Address **create_address_array(int max_rows) {
     return malloc(sizeof(struct Address *) * max_rows);
@@ -20,11 +19,12 @@ static struct Address **create_address_array(int max_rows) {
 
 static struct Address *create_address(int max_data,int id, int set) {
     
-    struct Address *addr = malloc(sizeof(struct Address));            
-    char *name = malloc(max_data);
-    char *email = malloc(max_data);
+    struct Address *addr = calloc(1,sizeof(struct Address));            
+    
+    char *name = calloc(max_data,sizeof(char));
+    char *email = calloc(max_data,sizeof(char));
         
-    if (addr && name && email) {
+    if (addr != NULL && name != NULL && email != NULL) {
         addr->id = id;
         addr->set = set;
         addr->name = name;
@@ -47,11 +47,24 @@ static struct Address *create_address(int max_data,int id, int set) {
  * @return 
  */
 static struct Address *create_address_fill(int max_data, int id, int set,char *name, char *email) {    
+    DEBUG_MSG("Create address");
     struct Address *addr = create_address(max_data,id,set);    
+    DEBUG_MSG("Received data:");
+    DEBUG_MSG(name);
+    DEBUG_MSG(email);
     
-    if (addr && name && email) {        
+    if (addr != NULL && name != NULL && email != NULL) {  
+        DEBUG_MSG("Have address, name and email");
         if (memcpy(addr->name, name,max_data) == NULL || memcpy(addr->email, email,max_data) == NULL) {
+            DEBUG_MSG("No memory for copy");
             addr = NULL;
+        }
+        DEBUG_MSG("Copy ok");
+        DEBUG_MSG(addr->name);
+        DEBUG_MSG(addr->email);
+        if (DEBUG) {
+            DEBUG_MSG("Printing address data:");
+            Database_address_print(addr);
         }
     }
     
@@ -90,12 +103,26 @@ struct Connection *Database_open(const char *filename, char mode) {
     }   
 
     if (mode == 'c') {
+        DEBUG_MSG("Creating new file");
         conn->file = fopen(filename, "w");
     }
     else {
-        conn->file = fopen(filename, "r+");  
+        DEBUG_MSG("Reading file");
+        conn->file = fopen(filename, "r+");
+        
         if (conn->file) {
-          
+            DEBUG_MSG("Have file");
+            fread(&(conn->db->max_rows),gSizeofint,1,conn->file);
+            fread(&(conn->db->max_data),gSizeofint,1,conn->file);
+            DEBUG_MSG("Read max_rows and max_data");
+            if (DEBUG) {
+                printf("Max_rows: %d\n",conn->db->max_rows);
+                printf("Max_data: %d\n",conn->db->max_data);
+            }
+            
+            conn->db->rows = create_address_array(conn->db->max_rows);
+            
+            Database_create_structure(conn,conn->file);
         }
         
     }
@@ -116,10 +143,7 @@ struct Connection *Database_open(const char *filename, char mode) {
  * @param max_rows
  * @param max_data
  */
-void Database_create(struct Connection *conn, int max_rows, int max_data) {
-    
-    //int i = 0;            
-    
+void Database_create(struct Connection *conn, int max_rows, int max_data) {                
     
     conn->db->rows = create_address_array(max_rows);
     
@@ -131,17 +155,7 @@ void Database_create(struct Connection *conn, int max_rows, int max_data) {
     conn->db->max_rows = max_rows;
     conn->db->max_data = max_data;
     
-    Database_create_structure(conn,max_data,NULL);
-    
-    //Create the structure now (not the best idea if you ask me :P)    
-    /*
-    for (i = 0; i < max_rows; i++) {              
-        conn->db->rows[i] = create_address(max_data,i,0);
-        
-        if (conn->db->rows[i] == NULL) {
-            Database_exit("Memory error for address", conn);
-        }
-    }*/
+    Database_create_structure(conn,NULL);    
 }
 /**
  *  Use this to create the rows of addresses in the Database struct
@@ -150,7 +164,7 @@ void Database_create(struct Connection *conn, int max_rows, int max_data) {
  * @param conn
  * @param fp
  */
-static void Database_create_structure(struct Connection *conn,int max_data,void *fp) {
+static void Database_create_structure(struct Connection *conn,void *fp) {
     //static struct Address *create_address(int,int,int);
     //static struct Address *create_address_fill(int,int,int,char*,char*);
         //Loop through the data. 
@@ -167,36 +181,51 @@ static void Database_create_structure(struct Connection *conn,int max_data,void 
          * 
          */ 
                     
-
+    int max_data = conn->db->max_rows;
     for (int i = 0, m = conn->db->max_rows; i < m; i++) {
-        if (fp != NULL) {            
+        if (fp != NULL) {
+            DEBUG_MSG("I have a file");
+           
+            //calloc(n, sizeof(int))
+            char *name = calloc(max_data,1);
+            char *email = calloc(max_data,1);
+            int *id = calloc(1,gSizeofint);
+            int *set = calloc(1,gSizeofint);
+            /*
             char *name = malloc(max_data);
             char *email = malloc(max_data);
             int *id = malloc(gSizeofint);
             int *set = malloc(gSizeofint);
-            
-            fread(id,gSizeofint,1,fp);
-            fread(set,gSizeofint,1,fp);
-            fread(name,max_data,1,fp);            
-            fread(email,max_data,1,fp);
+            */
+            DEBUG_MSG("Created vars");
+            fread(id,gSizeofint,1,(FILE*)fp);
+            fread(set,gSizeofint,1,(FILE*)fp);
+            fread(name,max_data,1,(FILE*)fp);            
+            fread(email,max_data,1,(FILE*)fp);
+            DEBUG_MSG("Read file");
+            DEBUG_MSG("Values:");
+            if (DEBUG) {
+                printf("Debug: %d\n",*id);
+                printf("Debug: %d\n",*set);
+            }
+            DEBUG_MSG("!!Value!!");
+            DEBUG_MSG(name);
+            DEBUG_MSG(email);
+            DEBUG_MSG("!!Value End!!");            
             
             conn->db->rows[i] = create_address_fill(max_data,*id,*set,name,email);
         
+            DEBUG_MSG("Address created");
             free(name);
             free(email);
         }
-        else {
+        else {            
             conn->db->rows[i] = create_address(max_data,i,0);
-        }
-        
-        
-        
+        }                        
         
         if (conn->db->rows[i] == NULL) {
             Database_exit("Memory error for address", conn);
         }
-        
-        
     }
 }
 
@@ -211,6 +240,8 @@ void Database_write(struct Connection *conn) {
     
     fwrite(&max_rows,intsize,1,conn->file);
     fwrite(&max_data,intsize,1,conn->file);
+    
+    DEBUG_MSG("Writing to file");
     
     for (int i = 0;i < max_rows;i++) {
         fwrite(&(conn->db->rows[i]->id),intsize,1,conn->file);
@@ -238,6 +269,12 @@ int Database_save(struct Connection *conn) {
 */
 void Database_set(struct Connection *conn, int id, const char *name, const char *email) {
     
+    DEBUG_MSG("In database_set");
+    DEBUG_MSG("-- Values given by user --");
+    DEBUG_MSG(name);
+    DEBUG_MSG(email);    
+    DEBUG_MSG("-- Values given by user END--");
+    
     int max_data = conn->db->max_data;
     int max_rows = conn->db->max_rows;    
     
@@ -255,12 +292,17 @@ void Database_set(struct Connection *conn, int id, const char *name, const char 
 
     addr->set = 1;
         
-    if (!safe_strncpy(addr->name, name, max_data)) {
-        Database_exit("Name copy failed", conn);
+    if (safe_strncpy(addr->name, name, max_data) == NULL) { 
+       Database_exit("Name copy failed", conn);
     }
     
-    if (!safe_strncpy(addr->email, email, max_data)) {
+    if (safe_strncpy(addr->email, email, max_data) == NULL) {
         Database_exit("Email copy failed", conn);
+    }
+    
+    if (DEBUG) {
+        DEBUG_MSG("Address created:");
+        Database_address_print(addr);
     }
 }
 
@@ -276,7 +318,7 @@ void Database_get(struct Connection *conn, int id) {
 }
 
 static void Database_address_print(struct Address *addr) {
-    printf("%d %s %s\n",addr->id, addr->name, addr->email);
+    printf("Id: %d - Name: %s - Email: %s\n",addr->id, addr->name, addr->email);
 }
 
 /**
