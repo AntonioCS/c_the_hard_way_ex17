@@ -17,6 +17,7 @@ void Database_get(struct Connection *, int);
 bool Database_close(struct Connection *);
 void Database_list(struct Connection *);
 void Database_delete(struct Connection *, int);
+void Database_search(struct Connection *, char *[]);
 
 #endif	/* FUNCTIONS_H */
 

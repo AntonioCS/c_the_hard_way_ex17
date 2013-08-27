@@ -10,10 +10,25 @@
 
 
 /*
- Change the code to accept parameters for MAX_DATA and MAX_ROWS, 
- * store them in the Database struct, 
- * and write that to the file, thus creating a database that can be arbitrarily sized.
- */
+Extra Credit
+
+    The die function needs to be augmented to let you pass the conn variable so it can close it and clean up.
+    DONE
+    Change the code to accept parameters for MAX_DATA and MAX_ROWS, store them in the Database struct, and write that to the file, thus creating a database that can be arbitrarily sized.
+    DONE 
+    Add more operations you can do on the database, like find.
+ 
+    Read about how C does it's struct packing, and then try to see why your file is the size it is. See if you can calculate a new size after adding more fields.
+ *
+    Add some more fields to the Address and make them searchable.
+ * 
+    Write a shell script that will do your testing automatically for you by running commands in the right order. 
+   Hint: Use set -e at the top of a bash to make it abort the whole script if any command has an error.
+ 
+    Try reworking the program to use a single global for the database connection. How does this new version of the program compare to the other one?
+ * 
+    Go research "stack data structure" and write one in your favorite language, then try to do it in C.
+*/
 
 /*#define MAX_DATA 512
 #define MAX_ROWS 100*/
@@ -60,7 +75,7 @@ int main(int argc, char *argv[]) {
 ///*
         case 'g':
             if (argc != 4) Database_exit("Need an id to get",conn);
-
+            DEBUG_MSG("!!Get!!");
             Database_get(conn, id);
             break;
 
@@ -81,6 +96,9 @@ int main(int argc, char *argv[]) {
         case 'l':
             Database_list(conn);
             break;
+        case 'f':
+            Database_search(conn,argv[1]);
+        break;
         default:
             Database_exit("Invalid action, only: c=create, g=get, s=set, d=del, l=list",conn);
  //*/

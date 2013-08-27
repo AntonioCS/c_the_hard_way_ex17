@@ -21,6 +21,9 @@ static struct Address *create_address(int max_data,int id, int set) {
     
     struct Address *addr = calloc(1,sizeof(struct Address));            
     
+    DEBUG_MSG("creating memory allocation for name and email");
+    printf("Size: %d\n",max_data);
+    
     char *name = calloc(max_data,sizeof(char));
     char *email = calloc(max_data,sizeof(char));
         
@@ -46,26 +49,13 @@ static struct Address *create_address(int max_data,int id, int set) {
  * @param email
  * @return 
  */
-static struct Address *create_address_fill(int max_data, int id, int set,char *name, char *email) {    
-    DEBUG_MSG("Create address");
+static struct Address *create_address_fill(int max_data, int id, int set,char *name, char *email) {        
     struct Address *addr = create_address(max_data,id,set);    
-    DEBUG_MSG("Received data:");
-    DEBUG_MSG(name);
-    DEBUG_MSG(email);
     
-    if (addr != NULL && name != NULL && email != NULL) {  
-        DEBUG_MSG("Have address, name and email");
-        if (memcpy(addr->name, name,max_data) == NULL || memcpy(addr->email, email,max_data) == NULL) {
-            DEBUG_MSG("No memory for copy");
+    if (addr != NULL && name != NULL && email != NULL) {          
+        if (memcpy(addr->name, name,max_data) == NULL || memcpy(addr->email, email,max_data) == NULL) {            
             addr = NULL;
-        }
-        DEBUG_MSG("Copy ok");
-        DEBUG_MSG(addr->name);
-        DEBUG_MSG(addr->email);
-        if (DEBUG) {
-            DEBUG_MSG("Printing address data:");
-            Database_address_print(addr);
-        }
+        }        
     }
     
     return addr;
@@ -102,23 +92,15 @@ struct Connection *Database_open(const char *filename, char mode) {
         Database_exit("Memory error",conn);
     }   
 
-    if (mode == 'c') {
-        DEBUG_MSG("Creating new file");
+    if (mode == 'c') {        
         conn->file = fopen(filename, "w");
     }
-    else {
-        DEBUG_MSG("Reading file");
+    else {        
         conn->file = fopen(filename, "r+");
         
-        if (conn->file) {
-            DEBUG_MSG("Have file");
+        if (conn->file) {            
             fread(&(conn->db->max_rows),gSizeofint,1,conn->file);
-            fread(&(conn->db->max_data),gSizeofint,1,conn->file);
-            DEBUG_MSG("Read max_rows and max_data");
-            if (DEBUG) {
-                printf("Max_rows: %d\n",conn->db->max_rows);
-                printf("Max_data: %d\n",conn->db->max_data);
-            }
+            fread(&(conn->db->max_data),gSizeofint,1,conn->file);                        
             
             conn->db->rows = create_address_array(conn->db->max_rows);
             
@@ -181,11 +163,9 @@ static void Database_create_structure(struct Connection *conn,void *fp) {
          * 
          */ 
                     
-    int max_data = conn->db->max_rows;
+    int max_data = conn->db->max_data;
     for (int i = 0, m = conn->db->max_rows; i < m; i++) {
         if (fp != NULL) {
-            DEBUG_MSG("I have a file");
-           
             //calloc(n, sizeof(int))
             char *name = calloc(max_data,1);
             char *email = calloc(max_data,1);
@@ -197,25 +177,14 @@ static void Database_create_structure(struct Connection *conn,void *fp) {
             int *id = malloc(gSizeofint);
             int *set = malloc(gSizeofint);
             */
-            DEBUG_MSG("Created vars");
+            
             fread(id,gSizeofint,1,(FILE*)fp);
             fread(set,gSizeofint,1,(FILE*)fp);
             fread(name,max_data,1,(FILE*)fp);            
             fread(email,max_data,1,(FILE*)fp);
-            DEBUG_MSG("Read file");
-            DEBUG_MSG("Values:");
-            if (DEBUG) {
-                printf("Debug: %d\n",*id);
-                printf("Debug: %d\n",*set);
-            }
-            DEBUG_MSG("!!Value!!");
-            DEBUG_MSG(name);
-            DEBUG_MSG(email);
-            DEBUG_MSG("!!Value End!!");            
             
             conn->db->rows[i] = create_address_fill(max_data,*id,*set,name,email);
         
-            DEBUG_MSG("Address created");
             free(name);
             free(email);
         }
@@ -234,19 +203,23 @@ void Database_write(struct Connection *conn) {
     rewind(conn->file);
     
     const int max_rows = conn->db->max_rows;
-    const int max_data = conn->db->max_rows;
+    const int max_data = conn->db->max_data;
     
     size_t intsize = sizeof(int);
     
     fwrite(&max_rows,intsize,1,conn->file);
     fwrite(&max_data,intsize,1,conn->file);
-    
-    DEBUG_MSG("Writing to file");
+        
     
     for (int i = 0;i < max_rows;i++) {
         fwrite(&(conn->db->rows[i]->id),intsize,1,conn->file);
         fwrite(&(conn->db->rows[i]->set),intsize,1,conn->file);
         
+        DEBUG_MSG("Writting data to file");
+        DEBUG_MSG("Name");
+        DEBUG_MSG(conn->db->rows[i]->name);
+        DEBUG_MSG("Email");
+        DEBUG_MSG(conn->db->rows[i]->email);
         fwrite(conn->db->rows[i]->name,max_data,1,conn->file);
         fwrite(conn->db->rows[i]->email,max_data,1,conn->file);
     }
@@ -306,9 +279,17 @@ void Database_set(struct Connection *conn, int id, const char *name, const char 
     }
 }
 
+/**
+ * 
+ * @param conn
+ * @param id - Id's internally start at 0 so I must decrease to 0
+ */
 void Database_get(struct Connection *conn, int id) {
+    
+    printf("--> id --> %d\n",id);
     struct Address *addr = conn->db->rows[id];
 
+    
     if(addr->set) {
         Database_address_print(addr);
     } 
@@ -318,7 +299,7 @@ void Database_get(struct Connection *conn, int id) {
 }
 
 static void Database_address_print(struct Address *addr) {
-    printf("Id: %d - Name: %s - Email: %s\n",addr->id, addr->name, addr->email);
+    printf("Id: %d - Name: %s - Email: %s\n",addr->id+1, addr->name, addr->email);
 }
 
 /**
